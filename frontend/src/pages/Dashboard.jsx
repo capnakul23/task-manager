@@ -5,13 +5,39 @@ import { useAuth } from '../context/AuthContext'
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const { user } = useAuth()
 
   useEffect(() => {
-    api.get('/dashboard').then(r => { setStats(r.data); setLoading(false) })
+    api.get('/dashboard')
+      .then(r => { setStats(r.data); setLoading(false) })
+      .catch(err => {
+        const message = err.response?.data?.detail
+          || err.message
+          || 'Failed to load dashboard data'
+        setError(message)
+        setLoading(false)
+      })
   }, [])
 
   if (loading) return <div className="spinner" />
+
+  if (error) return (
+    <div className="page-header">
+      <h1>Dashboard</h1>
+      <div style={{
+        marginTop: 24,
+        padding: '16px 20px',
+        background: 'var(--red-subtle, rgba(239,68,68,0.1))',
+        border: '1px solid var(--red, #ef4444)',
+        borderRadius: 8,
+        color: 'var(--red, #ef4444)',
+        fontSize: 14,
+      }}>
+        ⚠️ {error}
+      </div>
+    </div>
+  )
 
   const statItems = [
     { label: 'Total Tasks', value: stats.total_tasks, color: 'var(--accent)' },

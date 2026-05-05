@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -30,6 +30,9 @@ if os.path.exists(STATIC_DIR):
 
     @app.get("/{full_path:path}")
     def serve_frontend(full_path: str):
+        # Don't serve frontend for API routes
+        if full_path.startswith("api"):
+            raise HTTPException(status_code=404, detail="Not found")
         return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 else:
     @app.get("/")

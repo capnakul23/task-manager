@@ -1,59 +1,26 @@
 # TaskFlow – Team Task Manager
 
-A full-stack team task management app built with React + Vite (frontend) and FastAPI + PostgreSQL (backend).
+Full-stack app where the **Python backend serves the React frontend**. Deploy as a single Railway service — no env vars needed, no separate frontend service.
 
-## Features
-- JWT Authentication (Signup / Login)
-- Project creation with Admin/Member roles
-- Kanban-style task board (To Do / In Progress / Done)
-- Task assignment, priority, due dates
-- Dashboard with stats and charts
-- Role-based access control
+## Architecture
+
+```
+Railway (1 service)
+└── Docker container
+    ├── FastAPI backend  →  handles /api/* routes
+    └── React (static)  →  handles everything else
+```
+
+The single Dockerfile:
+1. Builds the React app with Node
+2. Copies the `dist/` output into `backend/static/`
+3. FastAPI serves `/api/*` as API and everything else as the React app
 
 ---
 
-## Project Structure
+## Deploy on Railway (Simple — just 2 services)
 
-```
-team-task-manager/
-├── backend/
-│   ├── main.py          # FastAPI app entrypoint
-│   ├── database.py      # SQLAlchemy setup
-│   ├── models.py        # DB models
-│   ├── schemas.py       # Pydantic schemas
-│   ├── auth_utils.py    # JWT + password hashing
-│   ├── Procfile         # Railway start command
-│   ├── requirements.txt
-│   └── routers/
-│       ├── auth.py
-│       ├── projects.py
-│       ├── tasks.py
-│       └── dashboard.py
-└── frontend/
-    ├── index.html
-    ├── vite.config.js
-    ├── package.json
-    ├── .env.example
-    └── src/
-        ├── App.jsx
-        ├── main.jsx
-        ├── index.css
-        ├── context/AuthContext.jsx
-        ├── utils/api.js
-        ├── components/Layout.jsx
-        └── pages/
-            ├── Login.jsx
-            ├── Signup.jsx
-            ├── Dashboard.jsx
-            ├── Projects.jsx
-            └── ProjectDetail.jsx
-```
-
----
-
-## Deploy Backend on Railway
-
-### Step 1 – Push to GitHub
+### STEP 1 — Push to GitHub
 ```bash
 git init
 git add .
@@ -62,109 +29,97 @@ git remote add origin https://github.com/YOUR_USERNAME/team-task-manager.git
 git push -u origin main
 ```
 
-### Step 2 – Create Railway Project
-1. Go to [railway.app](https://railway.app) → **New Project**
-2. Click **Deploy from GitHub repo** → select your repo
-3. Railway will auto-detect Python
+### STEP 2 — Create Railway Project
+Go to [railway.app](https://railway.app) → **New Project → Empty Project**
 
-### Step 3 – Add PostgreSQL Database
-1. In your Railway project, click **+ New** → **Database** → **PostgreSQL**
-2. Railway auto-sets `DATABASE_URL` in your environment ✅
+### STEP 3 — Add PostgreSQL
+Click **+ New → Database → PostgreSQL**
+Wait for it to provision (~30 seconds)
 
-### Step 4 – Set Backend Environment Variables
-In Railway → your backend service → **Variables** tab, add:
+### STEP 4 — Deploy the App
+Click **+ New → GitHub Repo** → select your repo
+
+Railway will find the root `Dockerfile` and build everything automatically.
+
+Go to **Variables tab** and add:
 ```
-SECRET_KEY=some-long-random-string-here
+DATABASE_URL  →  (copy from the PostgreSQL service's Variables tab)
+SECRET_KEY    →  any-random-string-change-this
 ```
-> `DATABASE_URL` is already injected automatically by Railway PostgreSQL.
 
-### Step 5 – Set Root Directory
-In Railway → Settings → **Root Directory** → set to `backend`
+### STEP 5 — Generate a Domain
+Settings → Networking → **Generate Domain**
 
-### Step 6 – Deploy
-Railway will build and deploy automatically. Copy your backend URL (e.g. `https://xxx.railway.app`).
+Open the URL — your app is live! ✅
+
+That's it. One service. No frontend/backend URL juggling.
 
 ---
 
-## Deploy Frontend on Vercel
+## Run Locally
 
-### Step 1 – Import Project
-1. Go to [vercel.com](https://vercel.com) → **New Project** → Import your GitHub repo
+Get a free PostgreSQL from [neon.tech](https://neon.tech) or use the Railway one.
 
-### Step 2 – Configure Build Settings
-| Setting | Value |
-|---|---|
-| Framework Preset | Vite |
-| Root Directory | `frontend` |
-| Build Command | `npm run build` |
-| Output Directory | `dist` |
-
-### Step 3 – Add Environment Variable
-```
-VITE_API_URL = https://your-backend-url.railway.app
-```
-(Use the Railway backend URL from Step 6 above)
-
-### Step 4 – Deploy
-Click **Deploy**. Done! ✅
-
----
-
-## Run Locally (no local PostgreSQL needed)
-
-You can use a free PostgreSQL from [neon.tech](https://neon.tech) or Railway itself.
-
-### Backend
 ```bash
-cd backend
+# Build frontend first
+cd frontend
+npm install
+npm run build
+cp -r dist ../backend/static
+
+# Run backend (serves both API + frontend)
+cd ../backend
 python -m venv venv
-source venv/bin/activate    # Windows: venv\Scripts\activate
+source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
-# Create .env file
-echo "DATABASE_URL=your_postgres_url_here" > .env
-echo "SECRET_KEY=localsecret123" >> .env
+# Set env vars
+export DATABASE_URL=your_postgres_url
+export SECRET_KEY=localsecret
 
 uvicorn main:app --reload --port 8000
 ```
 
-### Frontend
-```bash
-cd frontend
-npm install
+Open [http://localhost:8000](http://localhost:8000)
 
-# Create .env.local
-echo "VITE_API_URL=http://localhost:8000" > .env.local
+---
 
-npm run dev
+## Project Structure
+
 ```
-
-Open [http://localhost:5173](http://localhost:5173)
+team-task-manager/
+├── Dockerfile              ← Single build: React + FastAPI
+├── frontend/               ← React + Vite (built into backend/static)
+│   ├── src/
+│   │   ├── pages/          Landing, Login, Signup, Dashboard, Projects, ProjectDetail
+│   │   ├── components/     Layout
+│   │   ├── context/        AuthContext (JWT)
+│   │   └── utils/api.js    Axios — calls /api/* (relative, no URL needed)
+│   └── package.json
+└── backend/                ← FastAPI
+    ├── main.py             Serves API + React static files
+    ├── models.py           User, Project, Task, ProjectMember
+    ├── schemas.py
+    ├── auth_utils.py       JWT + bcrypt
+    ├── database.py
+    ├── requirements.txt
+    └── routers/            auth, projects, tasks, dashboard
+```
 
 ---
 
 ## API Endpoints
 
-| Method | Path | Description |
+| Method | Endpoint | Description |
 |---|---|---|
 | POST | /api/auth/signup | Register |
 | POST | /api/auth/login | Login |
 | GET | /api/projects | List my projects |
 | POST | /api/projects | Create project |
-| POST | /api/projects/:id/members | Add member |
-| DELETE | /api/projects/:id/members/:uid | Remove member |
+| POST | /api/projects/:id/members | Add member (admin) |
+| DELETE | /api/projects/:id/members/:uid | Remove member (admin) |
 | GET | /api/tasks/:project_id | List tasks |
-| POST | /api/tasks/:project_id | Create task |
+| POST | /api/tasks/:project_id | Create task (admin) |
 | PATCH | /api/tasks/:task_id | Update task |
-| DELETE | /api/tasks/:task_id | Delete task |
-| GET | /api/dashboard | Dashboard stats |
-
----
-
-## Tech Stack
-- **Frontend**: React 18, Vite, React Router, Axios
-- **Backend**: FastAPI, SQLAlchemy, Pydantic v2
-- **Database**: PostgreSQL
-- **Auth**: JWT (python-jose) + bcrypt
-- **Deploy**: Vercel (frontend) + Railway (backend + DB)
-# task-manager
+| DELETE | /api/tasks/:task_id | Delete task (admin) |
+| GET | /api/dashboard | Stats |

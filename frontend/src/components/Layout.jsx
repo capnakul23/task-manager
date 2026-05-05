@@ -2,9 +2,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const Icon = ({ name }) => {
-  const icons = {
-    dashboard: '⊞', projects: '◫', logout: '→', tasks: '✓'
-  }
+  const icons = { dashboard: '⊞', projects: '◫', logout: '→' }
   return <span style={{ fontSize: 16 }}>{icons[name] || '•'}</span>
 }
 
@@ -14,7 +12,7 @@ export default function Layout() {
   const location = useLocation()
 
   const nav = [
-    { label: 'Dashboard', icon: 'dashboard', path: '/' },
+    { label: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
     { label: 'Projects', icon: 'projects', path: '/projects' },
   ]
 
@@ -41,7 +39,7 @@ export default function Layout() {
             <div style={{ fontSize: 13, fontWeight: 600 }}>{user?.name}</div>
             <div style={{ fontSize: 12, color: 'var(--text2)' }}>{user?.email}</div>
           </div>
-          <button className="nav-item" onClick={() => { logout(); navigate('/login') }}>
+          <button className="nav-item" onClick={() => { logout(); navigate('/') }}>
             <Icon name="logout" /> Logout
           </button>
         </div>

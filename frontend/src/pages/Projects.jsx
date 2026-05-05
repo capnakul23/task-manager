@@ -10,13 +10,13 @@ export default function Projects() {
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  const load = () => api.get('/api/projects').then(r => { setProjects(r.data); setLoading(false) })
+  const load = () => api.get('/projects').then(r => { setProjects(r.data); setLoading(false) })
   useEffect(() => { load() }, [])
 
   const create = async e => {
     e.preventDefault(); setError('')
     try {
-      await api.post('/api/projects', form)
+      await api.post('/projects', form)
       setShowModal(false); setForm({ name: '', description: '' }); load()
     } catch (err) { setError(err.response?.data?.detail || 'Failed') }
   }

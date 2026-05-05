@@ -9,8 +9,9 @@ import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
 
 function PrivateRoute({ children }) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   const token = localStorage.getItem('token')
+  if (loading) return <div className="spinner" />
   return user || token ? children : <Navigate to="/login" />
 }
 

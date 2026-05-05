@@ -5,12 +5,15 @@ import api from '../utils/api'
 export default function Projects() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ name: '', description: '' })
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
-  const load = () => api.get('/projects').then(r => { setProjects(r.data); setLoading(false) })
+  const load = () => api.get('/projects')
+    .then(r => { setProjects(r.data); setLoading(false) })
+    .catch(err => { setLoadError(err.response?.data?.detail || 'Failed to load projects'); setLoading(false) })
   useEffect(() => { load() }, [])
 
   const create = async e => {
@@ -22,6 +25,7 @@ export default function Projects() {
   }
 
   if (loading) return <div className="spinner" />
+  if (loadError) return <div className="card" style={{ textAlign: 'center', color: 'var(--error, #e74c3c)', padding: '2rem' }}>⚠️ {loadError}</div>
 
   return (
     <div>

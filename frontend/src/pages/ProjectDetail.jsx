@@ -27,7 +27,7 @@ export default function ProjectDetail() {
   const isAdmin = myRole === 'admin'
 
   const load = async () => {
-    const [p, t] = await Promise.all([api.get(`/api/projects/${id}`), api.get(`/api/tasks/${id}`)])
+    const [p, t] = await Promise.all([api.get(`/projects/${id}`), api.get(`/tasks/${id}`)])
     setProject(p.data); setTasks(t.data); setLoading(false)
   }
   useEffect(() => { load() }, [id])
@@ -36,31 +36,31 @@ export default function ProjectDetail() {
     e.preventDefault(); setError('')
     try {
       const body = { ...taskForm, assignee_id: taskForm.assignee_id || null, due_date: taskForm.due_date || null }
-      await api.post(`/api/tasks/${id}`, body)
+      await api.post(`/tasks/${id}`, body)
       setShowTaskModal(false); setTaskForm({ title: '', description: '', due_date: '', priority: 'medium', assignee_id: '' }); load()
     } catch (err) { setError(err.response?.data?.detail || 'Failed') }
   }
 
   const updateTask = async (taskId, updates) => {
-    await api.patch(`/api/tasks/${taskId}`, updates); load()
+    await api.patch(`/tasks/${taskId}`, updates); load()
   }
 
   const deleteTask = async taskId => {
     if (!confirm('Delete this task?')) return
-    await api.delete(`/api/tasks/${taskId}`); load()
+    await api.delete(`/tasks/${taskId}`); load()
   }
 
   const addMember = async e => {
     e.preventDefault(); setError('')
     try {
-      await api.post(`/api/projects/${id}/members`, memberForm)
+      await api.post(`/projects/${id}/members`, memberForm)
       setShowMemberModal(false); setMemberForm({ email: '', role: 'member' }); load()
     } catch (err) { setError(err.response?.data?.detail || 'Failed') }
   }
 
   const removeMember = async userId => {
     if (!confirm('Remove this member?')) return
-    await api.delete(`/api/projects/${id}/members/${userId}`); load()
+    await api.delete(`/projects/${id}/members/${userId}`); load()
   }
 
   if (loading) return <div className="spinner" />

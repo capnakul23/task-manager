@@ -8,7 +8,7 @@ export default function Dashboard() {
   const { user } = useAuth()
 
   useEffect(() => {
-    api.get('/api/dashboard').then(r => { setStats(r.data); setLoading(false) })
+    api.get('/dashboard').then(r => { setStats(r.data); setLoading(false) })
   }, [])
 
   if (loading) return <div className="spinner" />
